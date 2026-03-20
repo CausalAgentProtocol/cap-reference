@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+from typing import Any
+
+from cap.core import (
+    ASSUMPTION_CAUSAL_SUFFICIENCY,
+    ASSUMPTION_FAITHFULNESS,
+    ASSUMPTION_LINEARITY,
+    ASSUMPTION_NO_INSTANTANEOUS_EFFECTS,
+    ASSUMPTION_NO_LATENT_CONFOUNDERS_ADDRESSED,
+)
+from cap.core.disclosure import sanitize_fields
+
+FORBIDDEN_FIELDS = (
+    "weight",
+    "tau",
+    "conditioning_set",
+    "p_value",
+    "confidence_interval",
+    "ci_lower",
+    "ci_upper",
+)
+
+DEFAULT_ASSUMPTIONS = [
+    ASSUMPTION_CAUSAL_SUFFICIENCY,
+    ASSUMPTION_FAITHFULNESS,
+    ASSUMPTION_NO_INSTANTANEOUS_EFFECTS,
+]
+
+# Protocol assumptions stay unprefixed. Adapter/disclosure-specific labels stay
+# namespaced under `abel_*` so they are not mistaken for protocol canonical names.
+APP_ASSUMPTION_HIDDEN_FIELD_POLICY = "abel_hidden_field_policy"
+APP_ASSUMPTION_LINEAR_PREDICTION_PROXY = "abel_linear_prediction_proxy"
+APP_ASSUMPTION_GRAPH_PROPAGATION_APPROXIMATION = "abel_graph_propagation_approximation"
+APP_ASSUMPTION_SINGLE_PULSE_INTERVENTION = "abel_single_pulse_intervention"
+APP_ASSUMPTION_STRUCTURAL_SUMMARY_ONLY = "abel_structural_summary_only"
+APP_ASSUMPTION_CONNECTIVITY_PROXY = "abel_connectivity_proxy_not_strict_d_separation"
+APP_ASSUMPTION_COUNTERFACTUAL_PREVIEW_ONLY = (
+    "abel_counterfactual_preview_not_abduction_action_prediction"
+)
+
+OBSERVATIONAL_ASSUMPTIONS = [
+    *DEFAULT_ASSUMPTIONS,
+    ASSUMPTION_LINEARITY,
+    APP_ASSUMPTION_LINEAR_PREDICTION_PROXY,
+    APP_ASSUMPTION_HIDDEN_FIELD_POLICY,
+]
+
+INTERVENTIONAL_ASSUMPTIONS = [
+    *DEFAULT_ASSUMPTIONS,
+    ASSUMPTION_LINEARITY,
+    ASSUMPTION_NO_LATENT_CONFOUNDERS_ADDRESSED,
+    APP_ASSUMPTION_GRAPH_PROPAGATION_APPROXIMATION,
+    APP_ASSUMPTION_SINGLE_PULSE_INTERVENTION,
+    APP_ASSUMPTION_HIDDEN_FIELD_POLICY,
+]
+
+COUNTERFACTUAL_PREVIEW_ASSUMPTIONS = [
+    *INTERVENTIONAL_ASSUMPTIONS,
+    APP_ASSUMPTION_COUNTERFACTUAL_PREVIEW_ONLY,
+]
+
+STRUCTURAL_ASSUMPTIONS = [
+    *DEFAULT_ASSUMPTIONS,
+    ASSUMPTION_NO_LATENT_CONFOUNDERS_ADDRESSED,
+    APP_ASSUMPTION_STRUCTURAL_SUMMARY_ONLY,
+    APP_ASSUMPTION_HIDDEN_FIELD_POLICY,
+]
+
+VALIDATION_ASSUMPTIONS = [
+    APP_ASSUMPTION_CONNECTIVITY_PROXY,
+    APP_ASSUMPTION_HIDDEN_FIELD_POLICY,
+]
+
+
+def sanitize_hidden_fields(payload: Any) -> Any:
+    return sanitize_fields(payload, forbidden_fields=FORBIDDEN_FIELDS)
