@@ -23,7 +23,6 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_json: bool = False
     cap_upstream_base_url: str = Field(
-        default="https://gateway.abel.ai/api",
         validation_alias=AliasChoices("CAP_UPSTREAM_BASE_URL", "CAP_CAP_UPSTREAM_BASE_URL"),
     )
     cap_upstream_timeout_seconds: float = 10.0
