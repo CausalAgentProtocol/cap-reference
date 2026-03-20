@@ -9,6 +9,26 @@ from typing import Any
 from abel_cap_client.client import AsyncAbelCAPClient
 
 
+def _parse_header_argument(value: str) -> tuple[str, str]:
+    name, separator, header_value = value.partition(":")
+    if not separator:
+        raise argparse.ArgumentTypeError("Headers must use 'Name: Value' format.")
+
+    normalized_name = name.strip()
+    normalized_value = header_value.strip()
+    if not normalized_name:
+        raise argparse.ArgumentTypeError("Header name cannot be empty.")
+    if not normalized_value:
+        raise argparse.ArgumentTypeError("Header value cannot be empty.")
+    return normalized_name, normalized_value
+
+
+def _build_headers(header_pairs: Sequence[tuple[str, str]] | None) -> dict[str, str] | None:
+    if not header_pairs:
+        return None
+    return {name: value for name, value in header_pairs}
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cap_client",
@@ -18,6 +38,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--base-url",
         default="http://127.0.0.1:8081",
         help="CAP server base URL.",
+    )
+    parser.add_argument(
+        "--header",
+        dest="headers",
+        action="append",
+        default=[],
+        metavar="NAME:VALUE",
+        type=_parse_header_argument,
+        help=(
+            "Optional request header to send to the CAP server, for example "
+            "\"Authorization: Bearer <api-key>\". Repeatable. If Authorization "
+            "is omitted, the server-side CAP_GATEWAY_API_KEY fallback can still be used."
+        ),
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -63,29 +96,34 @@ def build_parser() -> argparse.ArgumentParser:
 
 async def run_command(args: argparse.Namespace) -> dict[str, Any]:
     client = AsyncAbelCAPClient(args.base_url)
+    headers = _build_headers(getattr(args, "headers", None))
     try:
         if args.command == "capabilities":
-            response = await client.meta_capabilities()
+            response = await client.meta_capabilities(headers=headers)
         elif args.command == "neighbors":
             response = await client.graph_neighbors(
                 node_id=args.node_id,
                 scope=args.scope,
                 max_neighbors=args.max_neighbors,
+                headers=headers,
             )
         elif args.command == "paths":
             response = await client.graph_paths(
                 source_node_id=args.source_node_id,
                 target_node_id=args.target_node_id,
                 max_paths=args.max_paths,
+                headers=headers,
             )
         elif args.command == "observe":
             response = await client.observe_predict(
                 target_node=args.target_node,
+                headers=headers,
             )
         elif args.command == "markov-blanket":
             response = await client.graph_markov_blanket(
                 node_id=args.target_node,
                 max_neighbors=args.max_neighbors,
+                headers=headers,
             )
         elif args.command == "intervene-time-lag":
             response = await client.intervene_time_lag(
@@ -94,6 +132,7 @@ async def run_command(args: argparse.Namespace) -> dict[str, Any]:
                 outcome_node=args.outcome_node,
                 horizon_steps=args.horizon_steps,
                 model=args.model,
+                headers=headers,
             )
         else:
             raise ValueError(f"Unsupported command: {args.command}")
