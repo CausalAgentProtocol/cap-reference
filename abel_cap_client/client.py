@@ -7,14 +7,19 @@ from abel_cap_server.cap.contracts import (
     ExtensionsInterveneTimeLagResponse,
     ExtensionsMarkovBlanketResponse,
 )
-from cap.client import AsyncCAPClient
+from cap.client import AsyncCAPClient, CAPClientRoutes
 from cap.core.envelopes import CAPRequestOptions
 
 ABEL_MARKOV_BLANKET_ROUTE = "extensions/abel/markov_blanket"
 ABEL_INTERVENE_TIME_LAG_ROUTE = "extensions/abel/intervene_time_lag"
+DEFAULT_CAP_ROUTES = CAPClientRoutes(single_entry_path="/cap")
 
 
 class AsyncAbelCAPClient(AsyncCAPClient):
+    def __init__(self, base_url: str, **kwargs: Any) -> None:
+        kwargs.setdefault("routes", DEFAULT_CAP_ROUTES)
+        super().__init__(base_url, **kwargs)
+
     async def markov_blanket(
         self,
         *,
@@ -73,5 +78,6 @@ class AsyncAbelCAPClient(AsyncCAPClient):
 __all__ = [
     "ABEL_INTERVENE_TIME_LAG_ROUTE",
     "ABEL_MARKOV_BLANKET_ROUTE",
+    "DEFAULT_CAP_ROUTES",
     "AsyncAbelCAPClient",
 ]

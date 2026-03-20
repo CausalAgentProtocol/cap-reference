@@ -19,10 +19,9 @@ The settings object is cached by `get_settings()`.
 | --- | --- | --- | --- |
 | `CAP_APP_NAME` | `abel-cap` | no | FastAPI title and service metadata name |
 | `CAP_APP_VERSION` | `0.1.0` | no | service version and Capability Card version |
-| `CAP_APP_ENV` | `dev` | no | runtime environment label returned by `/api/v1/health` |
+| `CAP_APP_ENV` | `dev` | no | runtime environment label returned by `/health` |
 | `CAP_APP_HOST` | `0.0.0.0` | no | host used by the Python entrypoint |
 | `CAP_APP_PORT` | `8000` | no | port used by the Python entrypoint |
-| `CAP_API_V1_PREFIX` | `/api/v1` | no | versioned API prefix |
 | `CAP_LOG_LEVEL` | `INFO` | no | application log level |
 | `CAP_LOG_JSON` | `false` | no | enable structured JSON logs |
 | `CAP_UPSTREAM_BASE_URL` | none | yes | base URL for Abel primitive gateway requests |
@@ -119,5 +118,3 @@ A few settings change public metadata directly:
   - becomes `provider.name` in the Capability Card
 - `CAP_PROVIDER_URL`
   - becomes `provider.url` in the Capability Card
-- `CAP_API_V1_PREFIX`
-  - changes the advertised CAP endpoint URL inside the Capability Card

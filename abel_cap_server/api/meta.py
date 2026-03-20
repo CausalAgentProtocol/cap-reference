@@ -1,11 +1,18 @@
 from typing import cast
 
 from fastapi import APIRouter, Request
+from pydantic import BaseModel
 
-from abel_cap_server.api.schemas.health import ServiceMetaResponse
 from abel_cap_server.cap.catalog import CapabilityCard
 from abel_cap_server.core.config import Settings
 from abel_cap_server.cap.service import CapService
+
+
+class ServiceMetaResponse(BaseModel):
+    name: str
+    version: str
+    docs: str
+    openapi: str
 
 router = APIRouter(tags=["meta"])
 

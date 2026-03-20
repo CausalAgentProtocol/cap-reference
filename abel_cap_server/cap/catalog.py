@@ -197,7 +197,7 @@ def build_extension_namespaces(
 
 
 def build_capability_card(settings: Settings, *, public_base_url: str) -> CapabilityCard:
-    endpoint = f"{public_base_url.rstrip('/')}{settings.api_v1_prefix}"
+    endpoint = f"{public_base_url.rstrip('/')}/cap"
     supported_verbs = build_supported_verbs(DISPATCH_REGISTRY)
     extension_verbs = [
         verb for verbs in DISPATCH_REGISTRY.extension_verbs_by_namespace.values() for verb in verbs

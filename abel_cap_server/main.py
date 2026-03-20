@@ -4,8 +4,7 @@ import logging
 
 from fastapi import FastAPI
 
-from abel_cap_server.api.meta import router as meta_router
-from abel_cap_server.api.v1.router import api_router
+from abel_cap_server.api.router import api_router
 from abel_cap_server.cap.errors import register_cap_exception_handlers
 from abel_cap_server.clients.abel_gateway_client import AbelGatewayClient
 from abel_cap_server.cap.service import CapService
@@ -28,7 +27,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "app_env": active_settings.app_env,
                 "app_host": active_settings.app_host,
                 "app_port": active_settings.app_port,
-                "api_v1_prefix": active_settings.api_v1_prefix,
                 "upstream_configured": bool(active_settings.cap_upstream_base_url),
             },
         )
@@ -57,8 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_cap_exception_handlers(app)
     app.add_middleware(RequestLoggingMiddleware)
-    app.include_router(meta_router)
-    app.include_router(api_router, prefix=active_settings.api_v1_prefix)
+    app.include_router(api_router)
     return app
 
 

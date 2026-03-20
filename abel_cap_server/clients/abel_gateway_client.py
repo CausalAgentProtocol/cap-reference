@@ -4,6 +4,9 @@ from typing import Any
 import httpx
 
 from abel_cap_server.core.config import Settings
+from abel_cap_server.core.logging import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AbelGatewayClient:
@@ -184,6 +187,19 @@ class AbelGatewayClient:
             if header_name.lower() == name:
                 return value
         return None
+
+    @staticmethod
+    def _sanitize_headers(headers: Mapping[str, str] | None) -> dict[str, str] | None:
+        if headers is None:
+            return None
+
+        sanitized: dict[str, str] = {}
+        for header_name, value in headers.items():
+            if header_name.lower() == "authorization":
+                sanitized[header_name] = "***"
+            else:
+                sanitized[header_name] = value
+        return sanitized
 
     @staticmethod
     def _normalize_bearer_token(value: str) -> str:

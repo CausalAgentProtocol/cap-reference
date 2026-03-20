@@ -30,15 +30,15 @@ At startup the app:
 4. creates one shared `CapService`
 5. registers CAP exception handlers
 6. installs `RequestLoggingMiddleware`
-7. mounts the metadata router and the versioned API router
+7. mounts the metadata, CAP dispatch, and health routes
 
 The gateway client and service are stored under `app.state`, which is why request handlers can stay small and stateless.
 
 ## Request Lifecycle
 
-For `POST /api/v1/cap`, the code path is:
+For `POST /cap`, the code path is:
 
-1. `abel_cap_server/api/v1/endpoints/cap_dispatch.py`
+1. `abel_cap_server/api/cap_dispatch.py`
    - creates a dispatcher with `cap.server.build_fastapi_cap_dispatcher`
    - passes in the centralized registry from `abel_cap_server/cap/catalog.py`
    - passes in a provenance context provider from `abel_cap_server/cap/provenance.py`
@@ -67,7 +67,7 @@ For `POST /api/v1/cap`, the code path is:
 
 ## Metadata Endpoints
 
-Two routes live outside the versioned API dispatch path:
+Metadata and operational routes are mounted directly on the app:
 
 - `GET /`
   - implemented in `abel_cap_server/api/meta.py`
@@ -75,6 +75,9 @@ Two routes live outside the versioned API dispatch path:
 - `GET /.well-known/cap.json`
   - also implemented in `abel_cap_server/api/meta.py`
   - calls `CapService.build_capability_card`
+- `GET /health`
+  - implemented in `abel_cap_server/api/health.py`
+  - returns service liveness metadata
 
 The `meta.capabilities` verb returns the same Capability Card payload as `/.well-known/cap.json`.
 
@@ -86,8 +89,10 @@ The main modules are divided like this:
   - application assembly and shared dependency wiring
 - `abel_cap_server/api/meta.py`
   - root metadata and well-known Capability Card route
-- `abel_cap_server/api/v1/endpoints/cap_dispatch.py`
+- `abel_cap_server/api/cap_dispatch.py`
   - unified CAP HTTP entrypoint
+- `abel_cap_server/api/health.py`
+  - health route and health response model
 - `abel_cap_server/cap/catalog.py`
   - public verb registry
   - graph/profile metadata

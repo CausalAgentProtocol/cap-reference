@@ -42,9 +42,11 @@ Start here before changing anything:
   - App assembly and shared service/client wiring
 - `abel_cap_server/api/meta.py`
   - Root metadata and `/.well-known/cap.json`
-- `abel_cap_server/api/v1/endpoints/cap_dispatch.py`
-  - Unified CAP entrypoint `POST /api/v1/cap`
+- `abel_cap_server/api/cap_dispatch.py`
+  - Unified CAP entrypoint `POST /cap`
   - Dispatches by payload `verb` through `cap.server.build_fastapi_cap_dispatcher`
+- `abel_cap_server/api/health.py`
+  - Health route at `GET /health`
 - `abel_cap_server/cap/handlers.py`
   - Request-driven handlers that resolve `CapService` from `request.app.state.cap_service`
 - `abel_cap_server/cap/catalog.py`
@@ -83,21 +85,21 @@ When adding a new CAP endpoint, follow this order:
 5. Add or update adapter logic in `abel_cap_server/cap/adapters/`.
 6. Add or update shared registry wiring in `abel_cap_server/cap/catalog.py`. Prefer one-line registration there, e.g. `registry.core(CONTRACT)(handler)` or `registry.extension(...)(handler)`.
 7. Add or update upstream HTTP client calls in `abel_cap_server/clients/abel_gateway_client.py`.
-8. Wire the route in `abel_cap_server/api/v1/endpoints/` and `abel_cap_server/api/v1/router.py`.
+8. Wire the route in `abel_cap_server/api/` and `abel_cap_server/api/router.py`.
 9. Update the Capability Card if the public surface changed, but derive verb surface from registry metadata rather than hand-maintaining a second list.
 10. Update README and any plan docs if the contract changed.
 
 ## 5) Request Shape Rules
 
-- CAP endpoints in `abel_cap_server/api/v1` use CAP envelopes in the body (`cap_version`, `request_id`, `verb`, `params`, optional `options`).
-- Unified route entrypoint is `POST /api/v1/cap`; `verb` determines which CAP method executes.
+- CAP endpoints in `abel_cap_server/api/` use CAP envelopes in the body (`cap_version`, `request_id`, `verb`, `params`, optional `options`).
+- Unified route entrypoint is `POST /cap`; `verb` determines which CAP method executes.
 - Keep `params` minimal and explicit; do not expose raw upstream/internal schema fields.
 - Responses use CAP envelopes (`cap_version`, `request_id`, `verb`, `status`, `result`, optional `provenance`).
 
 Examples:
 
 - Good:
-  - `POST /api/v1/cap` with body `{ "cap_version": "0.2.2", "verb": "graph.neighbors", "params": { "node_id": "...", "scope": "parents", "max_neighbors": 3 } }`
+  - `POST /cap` with body `{ "cap_version": "0.2.2", "verb": "graph.neighbors", "params": { "node_id": "...", "scope": "parents", "max_neighbors": 3 } }`
 - Avoid:
   - ad-hoc payloads that bypass the CAP envelope contract
 
@@ -155,7 +157,7 @@ Whenever you add, remove, or materially change a public verb:
 
 - Update `/.well-known/cap.json` output in `abel_cap_server/api/meta.py` via `CapService.build_capability_card` (`abel_cap_server/cap/catalog.py`)
 - Update the registry wiring in `abel_cap_server/cap/catalog.py`; the capability card verb surface should fall out of that registry automatically
-- Keep `POST /api/v1/cap` with `verb=meta.capabilities` semantically equivalent to the well-known card
+- Keep `POST /cap` with `verb=meta.capabilities` semantically equivalent to the well-known card
 - Re-check:
   - `supported_verbs`
   - `conformance_level`

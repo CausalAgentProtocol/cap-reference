@@ -13,6 +13,7 @@ from abel_cap_server.cap.catalog import (
     build_dispatch_registry,
     build_supported_verbs,
 )
+from abel_cap_client.client import DEFAULT_CAP_ROUTES
 from abel_cap_server.cap.contracts import (
     GraphPathsRequest as AppGraphPathsRequest,
 )
@@ -234,10 +235,10 @@ def test_observe_predict_response_accepts_lightweight_observational_shape() -> N
 
 
 def test_routes_map_path_aliases_back_to_verbs() -> None:
-    routes = CAPClientRoutes()
+    routes = DEFAULT_CAP_ROUTES
 
-    assert routes.resolve("graph.neighbors") == "/api/v1/cap"
-    assert routes.resolve("intervene.do") == "/api/v1/cap"
+    assert routes.resolve("graph.neighbors") == "/cap"
+    assert routes.resolve("intervene.do") == "/cap"
     assert routes.resolve_verb("intervene/do") == "intervene.do"
     assert routes.resolve_verb("/extensions/abel/markov_blanket/") == (
         "extensions.abel.markov_blanket"
@@ -386,7 +387,7 @@ def test_protocol_exception_handlers_wrap_cap_http_and_validation_errors() -> No
         verb: str
         params: dict[str, str]
 
-    @app.post("/api/v1/cap/http-error")
+    @app.post("/cap/http-error")
     async def _http_error() -> None:
         raise CAPHTTPError(
             status_code=409,
@@ -394,14 +395,14 @@ def test_protocol_exception_handlers_wrap_cap_http_and_validation_errors() -> No
             cap_error=CAPErrorBody(code="upstream_error", message="Conflict.", details={"a": 1}),
         )
 
-    @app.post("/api/v1/cap/validate")
+    @app.post("/cap/validate")
     async def _validate(payload: _CAPPayload) -> dict[str, str]:
         return {"verb": payload.verb}
 
     client = TestClient(app)
 
     http_error_response = client.post(
-        "/api/v1/cap/http-error",
+        "/cap/http-error",
         json={"cap_version": "0.2.2", "request_id": "req-http", "verb": "graph.paths"},
     )
     assert http_error_response.status_code == 409
@@ -418,7 +419,7 @@ def test_protocol_exception_handlers_wrap_cap_http_and_validation_errors() -> No
     }
 
     validation_error_response = client.post(
-        "/api/v1/cap/validate",
+        "/cap/validate",
         json={"cap_version": "0.2.2", "request_id": "req-validate"},
     )
     assert validation_error_response.status_code == 422
@@ -498,7 +499,7 @@ def test_capability_card_models_support_richer_draft_fields() -> None:
             "version": "0.1.0",
             "cap_spec_version": "0.2.2",
             "provider": {"name": "Example", "url": "https://example.com"},
-            "endpoint": "https://example.com/api/v1",
+            "endpoint": "https://example.com/cap",
             "conformance_level": 2,
             "supported_verbs": {"core": ["graph.paths"], "convenience": []},
             "causal_engine": CapabilityCausalEngine(
@@ -792,7 +793,7 @@ def test_fastapi_dispatcher_reduces_handler_success_spec_with_context_provider()
         {
             "type": "http",
             "method": "POST",
-            "path": "/api/v1/cap",
+            "path": "/cap",
             "headers": [],
             "query_string": b"",
             "server": ("testserver", 80),
@@ -846,9 +847,9 @@ def test_fastapi_dispatcher_reduces_handler_success_spec_with_context_provider()
 
     assert seen == {
         "payload_verb": "graph.paths",
-        "request_path": "/api/v1/cap",
+        "request_path": "/cap",
         "provider_payload_verb": "graph.paths",
-        "provider_request_path": "/api/v1/cap",
+        "provider_request_path": "/cap",
     }
 
 
@@ -858,7 +859,7 @@ def test_fastapi_dispatcher_passes_success_spec_to_custom_reducer() -> None:
         {
             "type": "http",
             "method": "POST",
-            "path": "/api/v1/cap",
+            "path": "/cap",
             "headers": [],
             "query_string": b"",
             "server": ("testserver", 80),
@@ -924,7 +925,7 @@ def test_fastapi_dispatcher_passes_success_spec_to_custom_reducer() -> None:
     assert seen["payload_verb"] == "graph.paths"
     assert seen["algorithm"] == "primitive.explain"
     assert seen["server_name"] == "abel-cap"
-    assert seen["request_path"] == "/api/v1/cap"
+    assert seen["request_path"] == "/cap"
     assert int(seen["computation_time_ms"]) >= 1
 
 
@@ -958,7 +959,7 @@ def test_fastapi_dispatcher_calls_registered_handler_with_payload_and_request() 
         {
             "type": "http",
             "method": "POST",
-            "path": "/api/v1/cap",
+            "path": "/cap",
             "headers": [],
             "query_string": b"",
             "server": ("testserver", 80),
@@ -967,7 +968,7 @@ def test_fastapi_dispatcher_calls_registered_handler_with_payload_and_request() 
     )
 
     def _handler_payload_request(typed_payload, current_request):
-        assert current_request.url.path == "/api/v1/cap"
+        assert current_request.url.path == "/cap"
         assert typed_payload.verb == "graph.paths"
         return response_payload
 
@@ -989,7 +990,7 @@ def test_app_layer_reuses_protocol_models_and_envelope_helpers() -> None:
 
 def test_async_client_posts_built_cap_payload_to_current_http_route() -> None:
     async def _handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/cap"
+        assert request.url.path == "/cap"
         assert request.method == "POST"
         assert json.loads(request.content.decode("utf-8")) == {
             "cap_version": "0.2.2",
@@ -1032,7 +1033,11 @@ def test_async_client_posts_built_cap_payload_to_current_http_route() -> None:
         )
 
     async def _run() -> None:
-        client = AsyncCAPClient("https://cap.example", transport=httpx.MockTransport(_handler))
+        client = AsyncCAPClient(
+            "https://cap.example",
+            routes=DEFAULT_CAP_ROUTES,
+            transport=httpx.MockTransport(_handler),
+        )
         response = await client.graph_neighbors(
             node_id="NVDA_close",
             scope="children",
@@ -1064,7 +1069,7 @@ def test_async_client_can_send_request_level_headers_to_cap_server() -> None:
                     "version": "0.1.0",
                     "cap_spec_version": "0.2.2",
                     "provider": {"name": "Abel AI", "url": "https://abel.ai"},
-                    "endpoint": "https://cap.example/api/v1",
+                    "endpoint": "https://cap.example/cap",
                     "conformance_level": 1,
                     "supported_verbs": {"core": ["meta.capabilities"], "convenience": []},
                     "assumptions": [],
@@ -1092,7 +1097,11 @@ def test_async_client_can_send_request_level_headers_to_cap_server() -> None:
         )
 
     async def _run() -> None:
-        client = AsyncCAPClient("https://cap.example", transport=httpx.MockTransport(_handler))
+        client = AsyncCAPClient(
+            "https://cap.example",
+            routes=DEFAULT_CAP_ROUTES,
+            transport=httpx.MockTransport(_handler),
+        )
         response = await client.meta_capabilities(
             request_id="req-meta",
             headers={
@@ -1109,7 +1118,7 @@ def test_async_client_can_send_request_level_headers_to_cap_server() -> None:
 
 def test_async_client_can_map_route_alias_to_cap_verb() -> None:
     async def _handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/cap"
+        assert request.url.path == "/cap"
         assert json.loads(request.content.decode("utf-8")) == {
             "cap_version": "0.2.2",
             "options": {"response_detail": "summary"},
@@ -1147,7 +1156,11 @@ def test_async_client_can_map_route_alias_to_cap_verb() -> None:
         )
 
     async def _run() -> None:
-        client = AsyncCAPClient("https://cap.example", transport=httpx.MockTransport(_handler))
+        client = AsyncCAPClient(
+            "https://cap.example",
+            routes=DEFAULT_CAP_ROUTES,
+            transport=httpx.MockTransport(_handler),
+        )
         response = await client.request_route(
             "intervene/do",
             params={
@@ -1173,7 +1186,7 @@ def test_async_client_can_map_route_alias_to_cap_verb() -> None:
 
 def test_async_client_markov_blanket_uses_unified_graph_neighbors_scope() -> None:
     async def _handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/cap"
+        assert request.url.path == "/cap"
         assert json.loads(request.content.decode("utf-8")) == {
             "cap_version": "0.2.2",
             "options": {"response_detail": "summary"},
@@ -1215,7 +1228,11 @@ def test_async_client_markov_blanket_uses_unified_graph_neighbors_scope() -> Non
         )
 
     async def _run() -> None:
-        client = AsyncCAPClient("https://cap.example", transport=httpx.MockTransport(_handler))
+        client = AsyncCAPClient(
+            "https://cap.example",
+            routes=DEFAULT_CAP_ROUTES,
+            transport=httpx.MockTransport(_handler),
+        )
         response = await client.graph_markov_blanket(
             node_id="NVDA_close",
             max_neighbors=10,
@@ -1229,7 +1246,7 @@ def test_async_client_markov_blanket_uses_unified_graph_neighbors_scope() -> Non
 
 def test_async_client_traverse_parents_uses_verb_specific_params() -> None:
     async def _handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/cap"
+        assert request.url.path == "/cap"
         assert json.loads(request.content.decode("utf-8")) == {
             "cap_version": "0.2.2",
             "options": {"response_detail": "summary"},
@@ -1266,7 +1283,11 @@ def test_async_client_traverse_parents_uses_verb_specific_params() -> None:
         )
 
     async def _run() -> None:
-        client = AsyncCAPClient("https://cap.example", transport=httpx.MockTransport(_handler))
+        client = AsyncCAPClient(
+            "https://cap.example",
+            routes=DEFAULT_CAP_ROUTES,
+            transport=httpx.MockTransport(_handler),
+        )
         response = await client.traverse_parents(node_id="NVDA_close", top_k=3)
         await client.aclose()
 
@@ -1278,7 +1299,7 @@ def test_async_client_traverse_parents_uses_verb_specific_params() -> None:
 
 def test_async_client_traverse_children_uses_verb_specific_params() -> None:
     async def _handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/cap"
+        assert request.url.path == "/cap"
         assert json.loads(request.content.decode("utf-8")) == {
             "cap_version": "0.2.2",
             "options": {"response_detail": "summary"},
@@ -1315,7 +1336,11 @@ def test_async_client_traverse_children_uses_verb_specific_params() -> None:
         )
 
     async def _run() -> None:
-        client = AsyncCAPClient("https://cap.example", transport=httpx.MockTransport(_handler))
+        client = AsyncCAPClient(
+            "https://cap.example",
+            routes=DEFAULT_CAP_ROUTES,
+            transport=httpx.MockTransport(_handler),
+        )
         response = await client.traverse_children(node_id="NVDA_close", top_k=2)
         await client.aclose()
 
@@ -1327,7 +1352,7 @@ def test_async_client_traverse_children_uses_verb_specific_params() -> None:
 
 def test_async_client_raises_cap_http_error_with_parsed_error_body() -> None:
     async def _handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/cap"
+        assert request.url.path == "/cap"
         assert json.loads(request.content.decode("utf-8")) == {
             "cap_version": "0.2.2",
             "request_id": "req-meta",
@@ -1350,7 +1375,11 @@ def test_async_client_raises_cap_http_error_with_parsed_error_body() -> None:
         )
 
     async def _run() -> None:
-        client = AsyncCAPClient("https://cap.example", transport=httpx.MockTransport(_handler))
+        client = AsyncCAPClient(
+            "https://cap.example",
+            routes=DEFAULT_CAP_ROUTES,
+            transport=httpx.MockTransport(_handler),
+        )
         with pytest.raises(CAPHTTPError) as exc_info:
             await client.meta_capabilities(request_id="req-meta")
         await client.aclose()

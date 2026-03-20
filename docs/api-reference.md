@@ -9,7 +9,7 @@ By default the server runs at:
 - local development: `http://127.0.0.1:8000`
 - Docker image: `http://127.0.0.1:8080`
 
-The versioned API prefix defaults to `/api/v1`.
+The canonical CAP invocation path is `/cap`.
 
 ## HTTP Endpoints
 
@@ -18,9 +18,9 @@ The versioned API prefix defaults to `/api/v1`.
   - response fields: `name`, `version`, `docs`, `openapi`
 - `GET /.well-known/cap.json`
   - returns the public Capability Card
-- `GET /api/v1/health`
+- `GET /health`
   - returns `status`, `app_name`, `environment`, `version`
-- `POST /api/v1/cap`
+- `POST /cap`
   - accepts a CAP request envelope
   - dispatches by `verb`
 
@@ -339,7 +339,7 @@ The adapter layer translates upstream failures into CAP-friendly errors:
 ### `meta.capabilities`
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
+curl -s -X POST http://127.0.0.1:8000/cap \
   -H 'Content-Type: application/json' \
   -d '{
     "cap_version": "0.2.2",
@@ -350,7 +350,7 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
 ### `graph.paths`
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
+curl -s -X POST http://127.0.0.1:8000/cap \
   -H 'Content-Type: application/json' \
   -d '{
     "cap_version": "0.2.2",
@@ -367,7 +367,7 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
 ### `extensions.abel.counterfactual_preview`
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
+curl -s -X POST http://127.0.0.1:8000/cap \
   -H 'Content-Type: application/json' \
   -d '{
     "cap_version": "0.2.2",

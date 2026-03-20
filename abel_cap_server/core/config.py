@@ -19,7 +19,6 @@ class Settings(BaseSettings):
     app_env: str = "dev"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
-    api_v1_prefix: str = "/api/v1"
     log_level: str = "INFO"
     log_json: bool = False
     cap_upstream_base_url: str = Field(

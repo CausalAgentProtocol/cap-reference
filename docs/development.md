@@ -69,8 +69,10 @@ Within `abel_cap_server/`, these files matter most when changing behavior:
   - app assembly and shared state
 - `api/meta.py`
   - `/` and `/.well-known/cap.json`
-- `api/v1/endpoints/cap_dispatch.py`
+- `api/cap_dispatch.py`
   - single CAP entrypoint
+- `api/health.py`
+  - `/health` plus the health response model
 - `cap/catalog.py`
   - verb registry and Capability Card metadata
 - `cap/handlers.py`

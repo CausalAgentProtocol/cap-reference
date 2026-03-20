@@ -36,7 +36,7 @@ def test_well_known_capability_card_is_exposed(client: TestClient) -> None:
         payload["$schema"] == "https://causalagentprotocol.org/schema/capability-card/v0.2.2.json"
     )
     assert payload["cap_spec_version"] == CAP_VERSION
-    assert payload["endpoint"] == "http://testserver/api/v1"
+    assert payload["endpoint"] == "http://testserver/cap"
     assert payload["authentication"] == {
         "type": "none",
         "details": {},
@@ -153,7 +153,7 @@ def test_meta_capabilities_matches_well_known_card(client: TestClient) -> None:
     capability_card = client.get("/.well-known/cap.json").json()
 
     response = client.post(
-        "/api/v1/cap",
+        "/cap",
         json={"cap_version": "0.2.2", "request_id": "req-1", "verb": "meta.capabilities"},
     )
 
@@ -197,7 +197,7 @@ def test_observe_predict_endpoint_uses_cap_service_defaults(client: TestClient) 
     cast(Any, client.app).state.cap_service = fake_service
 
     response = client.post(
-        "/api/v1/cap",
+        "/cap",
         json={
             "cap_version": "0.2.2",
             "request_id": "req-observe",
@@ -372,7 +372,7 @@ def test_graph_paths_endpoint_uses_cap_service(client: TestClient) -> None:
     cast(Any, client.app).state.cap_service = fake_service
 
     response = client.post(
-        "/api/v1/cap",
+        "/cap",
         json={
             "cap_version": "0.2.2",
             "request_id": "req-paths",
@@ -740,7 +740,7 @@ def test_cap_dispatch_auto_reduces_success_spec_from_cap_service(client: TestCli
     cast(Any, client.app).state.cap_service = fake_service
 
     response = client.post(
-        "/api/v1/cap",
+        "/cap",
         json={
             "cap_version": "0.2.2",
             "request_id": "req-auto-reduce",
@@ -767,7 +767,7 @@ def test_cap_dispatch_auto_reduces_success_spec_from_cap_service(client: TestCli
 
 def test_cap_dispatch_returns_verb_not_supported_for_unknown_verb(client: TestClient) -> None:
     response = client.post(
-        "/api/v1/cap",
+        "/cap",
         json={
             "cap_version": "0.2.2",
             "request_id": "req-unsupported",
@@ -783,12 +783,12 @@ def test_cap_dispatch_returns_verb_not_supported_for_unknown_verb(client: TestCl
 
 
 def test_legacy_cap_route_is_not_mounted(client: TestClient) -> None:
-    response = client.post("/api/v1/observe/predict", json={})
+    response = client.post("/observe/predict", json={})
     assert response.status_code == 404
 
 
 def test_legacy_meta_route_is_not_mounted(client: TestClient) -> None:
-    response = client.post("/api/v1/meta/capabilities", json={})
+    response = client.post("/meta/capabilities", json={})
     assert response.status_code == 404
 
 
@@ -1110,7 +1110,7 @@ def test_cap_server_forwards_request_authorization_to_gateway(client: TestClient
     )
 
     response = client.post(
-        "/api/v1/cap",
+        "/cap",
         headers={"Authorization": "Bearer caller-key"},
         json={
             "cap_version": "0.2.2",

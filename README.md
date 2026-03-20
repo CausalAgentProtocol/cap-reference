@@ -15,7 +15,7 @@ If you are new to CAP, start with the [`cap` repository](https://github.com/Caus
 The current codebase shows a concrete CAP server that:
 
 - publishes a machine-readable capability card at `/.well-known/cap.json`
-- exposes CAP through a single HTTP entrypoint at `POST /api/v1/cap`
+- exposes CAP through a single HTTP entrypoint at `POST /cap`
 - dispatches requests by CAP `verb`, not by one-route-per-verb HTTP design
 - separates CAP core and convenience verbs from Abel-specific extension verbs
 - applies disclosure policy before returning protocol responses
@@ -33,7 +33,7 @@ Use this repository to understand three CAP ideas in a running service:
 The best entry points for that are:
 
 - `GET /.well-known/cap.json`
-- `POST /api/v1/cap`
+- `POST /cap`
 - [`abel_cap_server/cap/catalog.py`](abel_cap_server/cap/catalog.py)
 
 ## Run It Locally
@@ -63,7 +63,7 @@ Then inspect:
 
 - `http://127.0.0.1:8000/.well-known/cap.json`
 - `http://127.0.0.1:8000/docs`
-- `http://127.0.0.1:8000/api/v1/health`
+- `http://127.0.0.1:8000/health`
 
 Minimal required configuration:
 
@@ -74,12 +74,18 @@ CAP_GATEWAY_API_KEY=replace-with-your-gateway-api-key
 
 `CAP_UPSTREAM_BASE_URL` is required. Defaults and the full configuration surface are documented in [`docs/configuration.md`](docs/configuration.md) and implemented in `abel_cap_server/core/config.py`.
 
+For local learning, the auth model is simple:
+
+- if the caller sends `Authorization`, `cap-reference` forwards that credential upstream
+- otherwise the server falls back to `CAP_GATEWAY_API_KEY`
+- `X-Request-ID` is a transport-level HTTP header, separate from the CAP envelope's `request_id`
+
 ## Try The CAP Surface
 
 Fetch capabilities first:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
+curl -s -X POST http://127.0.0.1:8000/cap \
   -H 'Content-Type: application/json' \
   -d '{
     "cap_version": "0.2.2",
@@ -91,7 +97,7 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
 Query graph neighbors:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
+curl -s -X POST http://127.0.0.1:8000/cap \
   -H 'Content-Type: application/json' \
   -d '{
     "cap_version": "0.2.2",
@@ -108,7 +114,7 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
 Run a core intervention:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
+curl -s -X POST http://127.0.0.1:8000/cap \
   -H 'Content-Type: application/json' \
   -d '{
     "cap_version": "0.2.2",
@@ -121,6 +127,26 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/cap \
     }
   }' | jq
 ```
+
+Try the same CAP surface with caller-supplied HTTP headers:
+
+```bash
+curl -si -X POST http://127.0.0.1:8000/cap \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer demo-user-key' \
+  -H 'X-Request-ID: http-demo-1' \
+  -d '{
+    "cap_version": "0.2.2",
+    "request_id": "cap-demo-1",
+    "verb": "meta.capabilities"
+  }'
+```
+
+This is worth noticing because it shows two different layers at once:
+
+- `request_id` inside the JSON body is the CAP request identifier
+- `X-Request-ID` is an HTTP tracing header that the server will echo or generate
+- `Authorization` is transport-level auth that the server can forward upstream
 
 If you want the full verb-by-verb HTTP details, use [`docs/api-reference.md`](docs/api-reference.md).
 
@@ -155,13 +181,17 @@ Use repo-local docs for implementation and contributor detail:
 
 ## Example Client
 
-The repository includes a small demo CLI in [`abel_cap_client/`](abel_cap_client/). It talks to the same unified `POST /api/v1/cap` endpoint.
+The repository includes a small demo CLI in [`abel_cap_client/`](abel_cap_client/). It talks to the same unified `POST /cap` endpoint.
 
 ```bash
 uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 capabilities
+uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 --header "Authorization: Bearer demo-user-key" capabilities
+uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 --header "Authorization: Bearer demo-user-key" --header "X-Request-ID: cli-demo-1" neighbors NVDA_close --scope parents --max-neighbors 5
 ```
 
-Use it as a demo client for this server. For reusable Python integration across CAP services, use the official [`python-sdk`](https://github.com/CausalAgentProtocol/python-sdk).
+Use it as a demo client for this server. `--header "Name: Value"` is repeatable, so you can teach both auth and request-context behavior from the CLI. If `Authorization` is omitted, the server can still rely on its `CAP_GATEWAY_API_KEY` fallback.
+
+For reusable Python integration across CAP services, use the official [`python-sdk`](https://github.com/CausalAgentProtocol/python-sdk).
 
 ## Contributing And Community
 

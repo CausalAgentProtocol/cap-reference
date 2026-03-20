@@ -15,10 +15,10 @@ CAP_DISPATCHER = build_fastapi_cap_dispatcher(
     provenance_context_provider=get_abel_provenance_context,
 )
 
-router = APIRouter(prefix="/cap", tags=["cap"])
+router = APIRouter(tags=["cap"])
 
 
-@router.post("", summary="Dispatch CAP verbs by payload.verb")
+@router.post("/cap", summary="Dispatch CAP verbs by payload.verb")
 async def dispatch_cap(
     payload: dict[str, Any],
     request: Request,

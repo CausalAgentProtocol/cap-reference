@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.11"
 
 [[package]]
@@ -35,15 +35,15 @@ wheels = [
 
 [[package]]
 name = "cap-protocol"
-version = "1.0.0"
+version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/35/90/a4c26afffee7cd13db9264e0aa49d42936576ea09707d0b6c6751c2464d5/cap_protocol-1.0.0.tar.gz", hash = "sha256:928edce07c7a849913642f26339d35c135d5b8d4bebdb011945a66775617562a", size = 17717, upload-time = "2026-03-20T03:40:16.584Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/2c/0ac6497cbd016bfa59290a76fa3df42a0807cd5853332844d709ea901fa2/cap_protocol-1.0.1.tar.gz", hash = "sha256:030d390c6c68c02fb424f20bbc1e3a1437e97cbd56a49aafc2ec9d9133ec6918", size = 23799, upload-time = "2026-03-20T10:42:19.083Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/3c/9bc8584adf944588936e05b681d17bec8b56adf6aecc46886198adae158a/cap_protocol-1.0.0-py3-none-any.whl", hash = "sha256:339e45c672a790aeb81b4505ef454e8e82a8e550634b02576444b6ad94e0c35b", size = 21749, upload-time = "2026-03-20T03:40:14.913Z" },
+    { url = "https://files.pythonhosted.org/packages/10/0a/d295c3c1123a2ee13f6988efd5672d6609a649f76bd016403728958daea2/cap_protocol-1.0.1-py3-none-any.whl", hash = "sha256:0f34a8a56298b4ed7fa02b144ab7bf949de35a59013ad73efe477450f0e9d9a6", size = 26991, upload-time = "2026-03-20T10:42:17.54Z" },
 ]
 
 [package.optional-dependencies]
