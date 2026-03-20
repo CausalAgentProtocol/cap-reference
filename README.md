@@ -190,11 +190,14 @@ The repository includes a tiny example CLI in [`abel_cap_client/`](abel_cap_clie
 
 ```bash
 uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 capabilities
+uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 --header "Authorization: Bearer your-token" capabilities
 uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 neighbors NVDA_close --scope parents --max-neighbors 5
 uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 observe BTCUSD_volume
 uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 markov-blanket NVDA_close --max-neighbors 10
 uv run python -m abel_cap_client --base-url http://127.0.0.1:8000 intervene-time-lag NVDA_close 0.05 --outcome-node SONY_close --horizon-steps 24 --model linear
 ```
+
+Pass auth explicitly as a request header, for example `--header "Authorization: Bearer your-token"`. You can repeat `--header "Name: Value"` for custom headers such as `X-Trace-ID`. If you omit `Authorization` entirely, the server can still fall back to its `CAP_GATEWAY_API_KEY` configuration.
 
 ## Docker
 

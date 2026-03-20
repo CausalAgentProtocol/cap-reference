@@ -4,7 +4,7 @@ import json
 import httpx
 
 from abel_cap_client.client import AsyncAbelCAPClient
-from abel_cap_client.example import run_command
+from abel_cap_client.example import build_parser, run_command
 from cap.client import AsyncCAPClient, CAPClientRoutes
 from cap.core import (
     ASSUMPTION_CAUSAL_SUFFICIENCY,
@@ -18,9 +18,29 @@ def test_cap_client_example_uses_single_entry_by_default() -> None:
     assert routes.resolve("graph.neighbors") == "/api/v1/cap"
 
 
+def test_cap_client_example_parser_accepts_repeatable_headers() -> None:
+    args = build_parser().parse_args(
+        [
+            "--base-url",
+            "https://cap.example",
+            "--header",
+            "Authorization: Bearer cli-key",
+            "--header",
+            "X-Trace-ID: trace-123",
+            "capabilities",
+        ]
+    )
+
+    assert args.headers == [
+        ("Authorization", "Bearer cli-key"),
+        ("X-Trace-ID", "trace-123"),
+    ]
+
+
 def test_cap_client_example_neighbors_command_returns_json_shape(monkeypatch) -> None:
     async def _handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/api/v1/cap"
+        assert "Authorization" not in request.headers
         assert json.loads(request.content.decode("utf-8"))["verb"] == "graph.neighbors"
         return httpx.Response(
             200,
@@ -72,6 +92,74 @@ def test_cap_client_example_neighbors_command_returns_json_shape(monkeypatch) ->
 
     assert payload["verb"] == "graph.neighbors"
     assert payload["result"]["neighbors"][0]["node_id"] == "AMD_close"
+
+
+def test_cap_client_example_capabilities_command_can_send_request_headers(monkeypatch) -> None:
+    async def _handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["Authorization"] == "Bearer cli-key"
+        assert request.headers["X-Trace-ID"] == "trace-123"
+        return httpx.Response(
+            200,
+            json={
+                "cap_version": "0.2.2",
+                "request_id": "req-meta",
+                "verb": "meta.capabilities",
+                "status": "success",
+                "result": {
+                    "$schema": "https://causalagentprotocol.org/schema/capability-card/v0.2.2.json",
+                    "name": "Abel CAP Test",
+                    "description": "Capability card used by example client tests.",
+                    "version": "0.1.0",
+                    "cap_spec_version": "0.2.2",
+                    "provider": {"name": "Abel AI", "url": "https://abel.ai"},
+                    "endpoint": "https://cap.example/api/v1",
+                    "conformance_level": 1,
+                    "supported_verbs": {"core": ["meta.capabilities"], "convenience": []},
+                    "assumptions": [],
+                    "reasoning_modes_supported": [],
+                    "graph": {
+                        "domains": [],
+                        "node_count": 1,
+                        "edge_count": 0,
+                        "node_types": [],
+                        "edge_types_supported": [],
+                        "graph_representation": "time_lagged_directed_graph",
+                        "update_frequency": "unknown",
+                        "temporal_resolution": "unknown",
+                        "coverage_description": "test fixture",
+                    },
+                    "authentication": {"type": "api_key", "details": {}},
+                    "access_tiers": [],
+                    "disclosure_policy": {
+                        "hidden_fields": [],
+                        "default_response_detail": "summary",
+                        "notes": [],
+                    },
+                },
+            },
+        )
+
+    original_init = AsyncCAPClient.__init__
+
+    def _fake_init(self, base_url: str, **kwargs) -> None:
+        original_init(self, base_url, transport=httpx.MockTransport(_handler), **kwargs)
+
+    monkeypatch.setattr(AsyncCAPClient, "__init__", _fake_init)
+
+    payload = __import__("asyncio").run(
+        run_command(
+            argparse.Namespace(
+                base_url="https://cap.example",
+                command="capabilities",
+                headers=[
+                    ("Authorization", "Bearer cli-key"),
+                    ("X-Trace-ID", "trace-123"),
+                ],
+            )
+        )
+    )
+
+    assert payload["verb"] == "meta.capabilities"
 
 
 def test_cap_client_example_markov_blanket_command_uses_extension_route_alias(monkeypatch) -> None:
