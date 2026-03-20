@@ -109,7 +109,7 @@ CAP_UPSTREAM_BASE_URL=https://example.invalid/api
 CAP_GATEWAY_API_KEY=<your_api_key>
 ```
 
-Defaults live in `abel_cap_server/core/config.py`.
+`CAP_UPSTREAM_BASE_URL` is required. There is no built-in upstream default.
 
 ## Example Requests
 
